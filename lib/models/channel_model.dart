@@ -21,14 +21,27 @@ class Channel {
 
   factory Channel.fromMap(Map<String, dynamic> map) {
     return Channel(
-      id: map['id'],
-      name: map['name'],
-      description: map['description'],
-      streamUrl: map['streamUrl'],
-      thumbnailUrl: map['thumbnailUrl'],
-      category: map['category'],
-      viewerCount: map['viewerCount'],
-      isLive: map['isLive'],
+      id: map['id'].toString(),
+      name: map['name'] ?? '',
+      description: map['description'] ?? '',
+      streamUrl: map['stream_url'] ?? '',
+      thumbnailUrl: map['thumbnail_url'] ?? '',
+      category: map['category'] ?? '',
+      viewerCount: map['viewer_count'] ?? 0,
+      isLive: map['is_live'] ?? false,
     );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'description': description,
+      'stream_url': streamUrl,
+      'thumbnail_url': thumbnailUrl,
+      'category': category,
+      'viewer_count': viewerCount,
+      'is_live': isLive,
+    };
   }
 }
