@@ -1,6 +1,6 @@
 workflows:
-  build-apk:
-    name: Build Flutter APK
+  build-apk-windows:
+    name: Build Flutter APK & Windows Setup
     environment:
       flutter: stable
       xcode: latest
@@ -12,11 +12,20 @@ workflows:
       - name: Build Android APK
         script: flutter build apk --release
       
-      - name: Build Android App Bundle (optional)
-        script: flutter build appbundle --release
+      - name: Build Windows Setup File
+        script: |
+          flutter build windows --release
+          # Package Windows build as installer
+          # Note: Requires NSIS or similar installer tool
+          # Alternative: Create a simple zip package
+          cd build/windows/runner/Release
+          tar -czf windows-app.tar.gz *
+          mv windows-app.tar.gz ../../../
+    
     artifacts:
       - build/app/outputs/flutter-apk/*.apk
-      - build/app/outputs/bundle/**/*.aab
+      - build/windows-app.tar.gz
+    
     publishing:
       email:
         recipients:
