@@ -1,6 +1,8 @@
 workflows:
-  build-apk-windows:
-    name: Build Flutter APK & Windows Setup
+  build-flutter-apk:
+    name: Build Flutter APK
+    instance_type: mac_mini_m1
+    max_build_duration: 60
     environment:
       flutter: stable
       xcode: latest
@@ -11,22 +13,76 @@ workflows:
       
       - name: Build Android APK
         script: flutter build apk --release
-      
-      - name: Build Windows Setup File
-        script: |
-          flutter build windows --release
-          # Package Windows build as installer
-          # Note: Requires NSIS or similar installer tool
-          # Alternative: Create a simple zip package
-          cd build/windows/runner/Release
-          tar -czf windows-app.tar.gz *
-          mv windows-app.tar.gz ../../../
     
     artifacts:
       - build/app/outputs/flutter-apk/*.apk
-      - build/windows-app.tar.gz
     
     publishing:
       email:
         recipients:
           - gidiondev25@gmail.com
+        notify:
+          success: true
+          failure: true
+
+  build-windows-setup:
+    name: Build Windows Setup File
+    instance_type: windows_instance
+    max_build_duration: 60
+    environment:
+      flutter: stable
+    scripts:
+      - name: Get Flutter packages
+        script: flutter pub get
+      
+      - name: Build Windows Release
+        script: flutter build windows --release
+      
+      - name: Install NSIS
+        script: choco install nsis -y
+      
+      - name: Create NSIS Installer Script
+        script: |
+          @"
+          ; NSIS Installer for Flutter App
+          !include "MUI2.nsh"
+          
+          Name "Flutter App"
+          OutFile "FlutterApp-Setup.exe"
+          InstallDir "`$PROGRAMFILES\FlutterApp"
+          
+          !insertmacro MUI_PAGE_WELCOME
+          !insertmacro MUI_PAGE_DIRECTORY
+          !insertmacro MUI_PAGE_INSTFILES
+          !insertmacro MUI_PAGE_FINISH
+          !insertmacro MUI_LANGUAGE "English"
+          
+          Section "Install"
+            SetOutPath "`$INSTDIR"
+            File /r "build\windows\runner\Release\*.*"
+            CreateDirectory "`$SMPROGRAMS\FlutterApp"
+            CreateShortCut "`$SMPROGRAMS\FlutterApp\FlutterApp.lnk" "`$INSTDIR\flutter_app.exe"
+            WriteUninstaller "`$INSTDIR\uninstall.exe"
+          SectionEnd
+          
+          Section "Uninstall"
+            RMDir /r "`$INSTDIR"
+            RMDir /r "`$SMPROGRAMS\FlutterApp"
+          SectionEnd
+          "@ | Out-File -FilePath "installer.nsi" -Encoding UTF8
+      
+      - name: Build NSIS Installer
+        script: |
+          $nsis = "C:\Program Files (x86)\NSIS\makensis.exe"
+          & $nsis installer.nsi
+    
+    artifacts:
+      - "*.exe"
+    
+    publishing:
+      email:
+        recipients:
+          - gidiondev25@gmail.com
+        notify:
+          success: true
+          failure: true
